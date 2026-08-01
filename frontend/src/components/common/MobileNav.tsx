@@ -1,5 +1,4 @@
 import React from 'react';
-import { useRoomStore } from '../../store/roomStore';
 import type { Theme } from '../../hooks/useTheme';
 
 type Page = 'dashboard' | 'expenses' | 'payments' | 'history' | 'profile' | 'room';
@@ -10,8 +9,6 @@ interface MobileNavProps {
   theme: Theme;
   onToggleTheme: () => void;
 }
-
-const ROOM_COLORS = ['#ccff00','#7F77DD','#EF9F27','#378ADD','#639922'];
 
 const ITEMS: Array<{ id: Page; label: string; icon: React.ReactNode }> = [
   {
@@ -42,24 +39,8 @@ const ITEMS: Array<{ id: Page; label: string; icon: React.ReactNode }> = [
 ];
 
 export default function MobileNav({ activePage, onNavigate, theme, onToggleTheme }: MobileNavProps) {
-  const { rooms, activeRoomId, setActiveRoom } = useRoomStore();
-
   return (
     <nav className="fm-mobile-nav">
-      {rooms.length > 1 && (
-        <div className="fm-mobile-rooms">
-          {rooms.map((room, i) => (
-            <button
-              key={room.id}
-              className={`fm-mobile-room${activeRoomId === room.id ? ' active' : ''}`}
-              onClick={() => setActiveRoom(room.id)}
-            >
-              <span className="dot" style={{ background: ROOM_COLORS[i % ROOM_COLORS.length] }} />
-              {room.name}
-            </button>
-          ))}
-        </div>
-      )}
       <div className="fm-mobile-nav-inner">
         {ITEMS.map(item => (
           <button

@@ -7,6 +7,7 @@ import AddExpenseForm from '../components/expenses/AddExpenseForm';
 import Modal from '../components/common/Modal';
 import Button from '../components/common/Button';
 import StatCard from '../components/common/StatCard';
+import RoomSwitcher from '../components/common/RoomSwitcher';
 import { formatAmount } from '../utils/formateCurrency';
 import { ExpenseCategory } from '../types/expense.types';
 import { getCategoryMeta } from '../utils/categoryMeta';
@@ -54,7 +55,7 @@ export default function Expenses() {
     <div className="fm-page">
       <header className="fm-topbar">
         <div style={s.topLeft}>
-          <span style={s.breadcrumb}>My flat</span>
+          <RoomSwitcher />
           <span style={s.sep}>/</span>
           <span style={s.pageTitle}>Expenses</span>
         </div>

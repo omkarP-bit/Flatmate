@@ -7,6 +7,7 @@ import RecordPaymentForm from '../components/payments/RecordPaymentForm';
 import Modal from '../components/common/Modal';
 import Button from '../components/common/Button';
 import StatCard from '../components/common/StatCard';
+import RoomSwitcher from '../components/common/RoomSwitcher';
 import Loader from '../components/common/Loader';
 import { useToast } from '../components/common/Toast';
 import { formatAmount } from '../utils/formateCurrency';
@@ -55,7 +56,7 @@ export default function Payments() {
     <div className="fm-page">
       <header className="fm-topbar">
         <div style={s.topLeft}>
-          <span style={s.breadcrumb}>My flat</span>
+          <RoomSwitcher />
           <span style={s.sep}>/</span>
           <span style={s.pageTitle}>Payments</span>
         </div>

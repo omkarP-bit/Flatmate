@@ -3,6 +3,7 @@ import { useExpenses } from '../hooks/useExpenses';
 import { useRoom } from '../hooks/useRoom';
 import { useAuth } from '../hooks/useAuth';
 import StatCard from '../components/common/StatCard';
+import RoomSwitcher from '../components/common/RoomSwitcher';
 import ExpenseRow from '../components/expenses/ExpenseRow';
 import SuggestionBanner from '../components/expenses/SuggestionBanner';
 import MemberCard from '../components/room/MemberCard';
@@ -39,7 +40,7 @@ export default function Dashboard({ onNavigate }: Props) {
       {/* Topbar */}
       <header className="fm-topbar">
         <div style={s.topLeft}>
-          <span style={s.breadcrumb}>{activeRoom?.name ?? 'My flat'}</span>
+          <RoomSwitcher onNavigate={onNavigate} />
           <span style={s.sep}>/</span>
           <span style={s.pageTitle}>Dashboard</span>
         </div>

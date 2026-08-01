@@ -3,6 +3,7 @@ import { useRoom } from '../hooks/useRoom';
 import MemberCard from '../components/room/MemberCard';
 import Button from '../components/common/Button';
 import Loader from '../components/common/Loader';
+import RoomSwitcher from '../components/common/RoomSwitcher';
 import { useToast } from '../components/common/Toast';
 import { useConfirm } from '../components/common/Confirm';
 
@@ -110,7 +111,7 @@ export default function Room() {
     <div className="fm-page">
       <header className="fm-topbar">
         <div style={s.topLeft}>
-          <span style={s.breadcrumb}>{activeRoom?.name ?? 'Room'}</span>
+          <RoomSwitcher />
           <span style={s.sep}>/</span>
           <span style={s.pageTitle}>Room settings</span>
         </div>
