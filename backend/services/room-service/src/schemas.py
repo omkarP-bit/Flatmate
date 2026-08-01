@@ -43,3 +43,4 @@ class MemberOut(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     upi_id: Optional[str] = None
+    avatar_url: Optional[str] = None

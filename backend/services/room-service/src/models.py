@@ -12,6 +12,7 @@ class Profile(Base):
     name = Column(Text, nullable=False)
     email = Column(Text, nullable=False)
     upi_id = Column(Text, nullable=True)
+    avatar_key = Column(Text, nullable=True)
 
 
 class Room(Base):

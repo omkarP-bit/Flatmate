@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { userApi } from '../api/userApi';
+import { useRoomStore } from '../store/roomStore';
 import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
 import { useToast } from '../components/common/Toast';
@@ -16,6 +17,7 @@ const NAV: Array<{ id: Section; label: string }> = [
 
 export default function Profile() {
   const { user, refreshUser, signOut } = useAuth();
+  const { activeRoomId, fetchMembers } = useRoomStore();
   const toast = useToast();
   const { confirm } = useConfirm();
   const [active,  setActive]  = useState<Section>('profile');
@@ -33,6 +35,7 @@ export default function Profile() {
     try {
       await userApi.updateMe({ name, phone, upi_id: upi });
       await refreshUser();
+      if (activeRoomId) await fetchMembers(activeRoomId);
       setSaved(true);
       toast.success('Profile saved');
       setTimeout(() => setSaved(false), 2000);
@@ -73,6 +76,7 @@ export default function Profile() {
       if (!presigned.ok) throw new Error('Upload failed');
       await userApi.updateMe({ avatar_key: key });
       await refreshUser();
+      if (activeRoomId) await fetchMembers(activeRoomId);
       toast.success('Profile photo updated');
     } catch (e: any) {
       toast.error(e.response?.data?.detail ?? e.message ?? 'Failed to upload photo');

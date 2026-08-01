@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from auth import get_current_user_id
 from database import get_db
 from models import Profile
+from s3_utils import generate_download_url
 from schemas import MemberOut, RoomCreate, RoomJoin, RoomOut, RoomUpdate
 from service import (
     create_room,
@@ -118,6 +119,11 @@ def get_members_route(
             name=profiles[m.user_id].name if m.user_id in profiles else None,
             email=profiles[m.user_id].email if m.user_id in profiles else None,
             upi_id=profiles[m.user_id].upi_id if m.user_id in profiles else None,
+            avatar_url=(
+                generate_download_url(profiles[m.user_id].avatar_key)
+                if m.user_id in profiles and profiles[m.user_id].avatar_key
+                else None
+            ),
         )
         for m in members
     ]
