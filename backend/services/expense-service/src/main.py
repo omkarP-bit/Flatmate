@@ -10,8 +10,12 @@ app = FastAPI(title="Flatmate – Expense Service")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[
+        "https://dcv6944l3p636.cloudfront.net",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

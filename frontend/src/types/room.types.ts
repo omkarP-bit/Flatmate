@@ -22,6 +22,11 @@ export interface RoomCreate {
   address?: string;
 }
 
+export interface RoomUpdate {
+  name?: string;
+  address?: string;
+}
+
 export interface RoomJoin {
   room_code: string;
 }

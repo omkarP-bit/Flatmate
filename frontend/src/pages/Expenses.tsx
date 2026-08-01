@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuthStore } from '../store/authStore';
 import { useExpenses } from '../hooks/useExpenses';
 import ExpenseRow from '../components/expenses/ExpenseRow';
 import SuggestionBanner from '../components/expenses/SuggestionBanner';
@@ -20,6 +21,7 @@ const CATS: Array<{ id: string; label: string }> = [
 ];
 
 export default function Expenses() {
+  const { user } = useAuthStore();
   const { expenses, grouped, suggestions, loading, handleDelete, handleSettle } = useExpenses();
   const [showAdd,   setShowAdd]   = useState(false);
   const [search,    setSearch]    = useState('');
@@ -29,7 +31,7 @@ export default function Expenses() {
 
   const totalMonth  = expenses.reduce((s, e) => s + e.amount, 0);
   const myShares    = expenses.flatMap(e => e.splits).reduce((s, sp) => s + sp.amount, 0);
-  const iPaidTotal  = expenses.filter(e => e.paid_by === 'me').reduce((s, e) => s + e.amount, 0);
+  const iPaidTotal  = expenses.filter(e => e.paid_by === user?.id).reduce((s, e) => s + e.amount, 0);
 
   const filtered = expenses.filter(e =>
     (activeCat === 'all' || e.category === activeCat) &&
@@ -49,8 +51,8 @@ export default function Expenses() {
   }, {});
 
   return (
-    <div style={s.page}>
-      <header style={s.topbar}>
+    <div className="fm-page">
+      <header className="fm-topbar">
         <div style={s.topLeft}>
           <span style={s.breadcrumb}>My flat</span>
           <span style={s.sep}>/</span>
@@ -62,7 +64,7 @@ export default function Expenses() {
         </Button>
       </header>
 
-      <div style={s.content}>
+      <div className="fm-content">
         {/* Suggestions */}
         {suggestions.filter(sg => !dismissed.includes(sg.category)).slice(0, 1).map(sg => (
           <SuggestionBanner key={sg.category} suggestion={sg}
@@ -71,14 +73,14 @@ export default function Expenses() {
         ))}
 
         {/* Stats */}
-        <div style={s.statsRow}>
+        <div className="fm-grid-3">
           <StatCard label="Total this month"  value={formatAmount(totalMonth)} />
           <StatCard label="Your total share"  value={formatAmount(myShares)}   valueColor="var(--text-danger)" />
           <StatCard label="Total expenses"    value={String(expenses.length)} />
         </div>
 
         {/* Main card */}
-        <div style={s.card}>
+        <div className="fm-card">
           <div style={s.cardHeader}>
             <span style={s.cardTitle}>All expenses</span>
             <select value={sort} onChange={e => setSort(e.target.value)} style={s.sortSel}>
@@ -136,20 +138,15 @@ export default function Expenses() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page:        { display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' },
-  topbar:      { height: 54, background: 'var(--bg-primary)', borderBottom: '0.5px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', flexShrink: 0 },
   topLeft:     { display: 'flex', alignItems: 'center', gap: 10 },
   breadcrumb:  { fontSize: 13, color: 'var(--text-tertiary)' },
   sep:         { color: 'var(--border-mid)' },
   pageTitle:   { fontSize: 15, fontWeight: 500 },
-  content:     { padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' },
-  statsRow:    { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 },
-  card:        { background: 'var(--bg-primary)', border: '0.5px solid var(--border-light)', borderRadius: 'var(--r-lg)', padding: '1.1rem' },
-  cardHeader:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' },
+  cardHeader:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem', gap: 8, flexWrap: 'wrap' },
   cardTitle:   { fontSize: 13.5, fontWeight: 600 },
   sortSel:     { height: 30, padding: '0 8px', borderRadius: 'var(--r-md)', border: '0.5px solid var(--border-light)', background: 'var(--bg-primary)', color: 'var(--text-secondary)', fontSize: 12, fontFamily: 'var(--font-sans)', outline: 'none', cursor: 'pointer' },
   toolbar:     { display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: '0.85rem' },
-  searchBox:   { display: 'flex', alignItems: 'center', gap: 7, background: 'var(--bg-secondary)', border: '0.5px solid var(--border-light)', borderRadius: 'var(--r-md)', padding: '0 10px', height: 30, flex: 1, maxWidth: 240 },
+  searchBox:   { display: 'flex', alignItems: 'center', gap: 7, background: 'var(--bg-secondary)', border: '0.5px solid var(--border-light)', borderRadius: 'var(--r-md)', padding: '0 10px', height: 30, flex: 1, minWidth: 160, maxWidth: 240 },
   searchInput: { background: 'transparent', border: 'none', outline: 'none', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', width: '100%' },
   chip:        { padding: '4px 12px', borderRadius: 9999, border: '0.5px solid var(--border-light)', background: 'transparent', fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' },
   chipActive:  { background: '#ccff00', color: '#000', borderColor: '#ccff00', fontWeight: 500 },

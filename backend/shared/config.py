@@ -1,25 +1,18 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field
+from urllib.parse import urlparse
 
 
 class Settings(BaseSettings):
-    # Database
-    db_host: str = Field(..., env="DB_HOST")
-    db_name: str = Field(..., env="DB_NAME")
-    db_user: str = Field(..., env="DB_USER")
-    db_password: str = Field(..., env="DB_PASSWORD")
-    db_port: int = Field(5432, env="DB_PORT")
+    # Supabase
+    supabase_url: str = Field(..., env="SUPABASE_URL")
+    supabase_service_key: str = Field(..., env="SUPABASE_SERVICE_KEY")
+    supabase_jwt_secret: str = Field(..., env="SUPABASE_JWT_SECRET")
 
-    # Redis
-    redis_url: str = Field("redis://localhost:6379", env="REDIS_URL")
-
-    # S3
-    s3_bucket: str = Field("", env="S3_BUCKET")
-
-    # Cognito
-    cognito_user_pool_id: str = Field(..., env="COGNITO_USER_POOL_ID")
-    cognito_client_id: str = Field(..., env="COGNITO_CLIENT_ID")
-    cognito_region: str = Field("ap-south-1", env="COGNITO_REGION")
+    # Optional override for the SQLAlchemy connection URL.
+    # Recommended: the Supabase pooler connection string, e.g.
+    # postgresql://postgres.<ref>:<password>@aws-1-ap-south-1.pooler.supabase.com:6543/postgres
+    database_url: str | None = Field(None, env="DATABASE_URL")
 
     # App
     environment: str = Field("production", env="ENVIRONMENT")
@@ -27,17 +20,26 @@ class Settings(BaseSettings):
 
     @property
     def db_url(self) -> str:
+        """SQLAlchemy connection URL used by all services.
+
+        Prefers DATABASE_URL when set. Otherwise falls back to deriving the
+        host from the Supabase project URL.
+        """
+        if self.database_url:
+            return self.database_url
+        parsed = urlparse(self.supabase_url)
+        project_ref = parsed.hostname.split('.')[0]
+        host = f"db.{project_ref}.supabase.co"
+        # The DB password is the same as the service role key for Supabase
         return (
-            f"postgresql+psycopg2://{self.db_user}:{self.db_password}"
-            f"@{self.db_host}:{self.db_port}/{self.db_name}"
+            f"postgresql+psycopg2://postgres:{self.supabase_service_key}"
+            f"@{host}:5432/postgres"
         )
 
     @property
-    def cognito_jwks_url(self) -> str:
-        return (
-            f"https://cognito-idp.{self.cognito_region}.amazonaws.com"
-            f"/{self.cognito_user_pool_id}/.well-known/jwks.json"
-        )
+    def supabase_anon_key(self) -> str:
+        """The anon key can be derived or set separately."""
+        return self.supabase_service_key
 
     class Config:
         env_file = ".env"

@@ -14,6 +14,9 @@ export const userApi = {
   getAvatarUploadUrl: () =>
     userClient.get<AvatarUploadResponse>('/users/me/avatar-upload-url').then(r => r.data),
 
+  deleteMe: () =>
+    userClient.delete<{ message: string }>('/users/me').then(r => r.data),
+
   getById: (userId: string) =>
     userClient.get<User>(`/users/${userId}`).then(r => r.data),
 

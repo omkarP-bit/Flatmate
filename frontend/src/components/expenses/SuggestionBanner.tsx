@@ -32,15 +32,15 @@ export default function SuggestionBanner({ suggestion, onAdd, onDismiss }: Props
 }
 
 const s: Record<string, React.CSSProperties> = {
-  banner:     { background: '#dbeafe', border: '0.5px solid #bfdbfe', borderRadius: 'var(--r-lg)', padding: '1rem 1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' },
-  left:       { display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1 },
+  banner:     { background: 'var(--bg-info)', border: '0.5px solid var(--border-light)', borderRadius: 'var(--r-lg)', padding: '1rem 1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' },
+  left:       { display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1, minWidth: 200 },
   icon:       { width: 36, height: 36, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, marginTop: 2 },
-  label:      { fontSize: 11, color: '#1e40af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 },
-  message:    { fontSize: 13, color: '#1e40af', lineHeight: 1.5 },
-  hint:       { fontSize: 11, color: '#3b82f6', marginTop: 3 },
+  label:      { fontSize: 11, color: 'var(--text-info)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 },
+  message:    { fontSize: 13, color: 'var(--text-info)', lineHeight: 1.5 },
+  hint:       { fontSize: 11, color: 'var(--text-info)', opacity: 0.7, marginTop: 3 },
   actions:    { display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 },
   primaryBtn: { background: '#ccff00', color: '#000', border: 'none', borderRadius: 9999, padding: '5px 16px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-sans)' },
-  ghostBtn:   { background: 'transparent', border: '0.5px solid #bfdbfe', borderRadius: 9999, padding: '5px 14px', fontSize: 12, color: '#1e40af', cursor: 'pointer', fontFamily: 'var(--font-sans)' },
+  ghostBtn:   { background: 'transparent', border: '0.5px solid var(--border-mid)', borderRadius: 9999, padding: '5px 14px', fontSize: 12, color: 'var(--text-info)', cursor: 'pointer', fontFamily: 'var(--font-sans)' },
 };
 
 import React from 'react';

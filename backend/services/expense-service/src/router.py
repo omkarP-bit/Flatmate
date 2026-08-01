@@ -90,14 +90,12 @@ def room_balances(
     db: Session = Depends(get_db),
 ):
     cache_key = f"balance:room:{room_id}"
-    cached = asyncio.get_event_loop().run_until_complete(cache_get(cache_key))
+    cached = cache_get(cache_key)
     if cached:
         return [BalanceEntry(**entry) for entry in cached]
 
     balances = compute_room_balances(room_id, db)
-    asyncio.get_event_loop().run_until_complete(
-        cache_set(cache_key, [b.model_dump() for b in balances], ttl=60)
-    )
+    cache_set(cache_key, [b.model_dump() for b in balances], ttl=60)
     return balances
 
 

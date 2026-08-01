@@ -37,9 +37,8 @@ def create_expense(data: ExpenseCreate, paid_by: str, db: Session) -> Expense:
     db.commit()
     db.refresh(expense)
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(cache_delete(f"expenses:room:{data.room_id}"))
-    loop.run_until_complete(cache_delete(f"balance:room:{data.room_id}"))
+    cache_delete(f"expenses:room:{data.room_id}")
+    cache_delete(f"balance:room:{data.room_id}")
 
     # Reload with splits
     return (
@@ -52,7 +51,7 @@ def create_expense(data: ExpenseCreate, paid_by: str, db: Session) -> Expense:
 
 def get_room_expenses(room_id: int, db: Session) -> list[Expense]:
     cache_key = f"expenses:room:{room_id}"
-    cached = asyncio.get_event_loop().run_until_complete(cache_get(cache_key))
+    cached = cache_get(cache_key)
     if cached:
         # Return fresh from DB for type consistency
         return (
@@ -70,9 +69,7 @@ def get_room_expenses(room_id: int, db: Session) -> list[Expense]:
         .order_by(Expense.created_at.desc())
         .all()
     )
-    asyncio.get_event_loop().run_until_complete(
-        cache_set(cache_key, [{"id": e.id} for e in expenses], ttl=120)
-    )
+    cache_set(cache_key, [{"id": e.id} for e in expenses], ttl=120)
     return expenses
 
 
@@ -101,9 +98,8 @@ def delete_expense(expense_id: int, user_id: str, db: Session) -> dict:
     db.delete(expense)
     db.commit()
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(cache_delete(f"expenses:room:{room_id}"))
-    loop.run_until_complete(cache_delete(f"balance:room:{room_id}"))
+    cache_delete(f"expenses:room:{room_id}")
+    cache_delete(f"balance:room:{room_id}")
 
     return {"message": "Expense deleted."}
 
@@ -132,8 +128,6 @@ def settle_my_split(expense_id: int, user_id: str, db: Session) -> dict:
     db.commit()
 
     if expense:
-        asyncio.get_event_loop().run_until_complete(
-            cache_delete(f"balance:room:{expense.room_id}")
-        )
+        cache_delete(f"balance:room:{expense.room_id}")
 
     return {"message": "Split settled."}

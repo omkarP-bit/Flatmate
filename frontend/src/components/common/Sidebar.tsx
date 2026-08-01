@@ -2,12 +2,15 @@ import { useRoomStore } from '../../store/roomStore';
 import { useAuthStore } from '../../store/authStore';
 import Avatar from './Avatar';
 import React from 'react';
+import type { Theme } from '../../hooks/useTheme';
 
 type Page = 'dashboard' | 'expenses' | 'payments' | 'history' | 'profile' | 'room';
 
 interface SidebarProps {
   activePage: Page;
   onNavigate: (page: Page) => void;
+  theme: Theme;
+  onToggleTheme: () => void;
 }
 
 const NAV = [
@@ -23,18 +26,18 @@ const NAV = [
 
 const ROOM_COLORS = ['#ccff00','#7F77DD','#EF9F27','#378ADD','#639922'];
 
-export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
+export default function Sidebar({ activePage, onNavigate, theme, onToggleTheme }: SidebarProps) {
   const { rooms, activeRoomId, setActiveRoom } = useRoomStore();
   const { user } = useAuthStore();
 
   return (
-    <aside style={styles.sidebar}>
+    <aside className="fm-sidebar">
       <div style={styles.logo}>
         <div style={styles.logoBox}>F</div>
         <span style={styles.logoName}>Flatmate</span>
       </div>
 
-      <div style={styles.section}>Menu</div>
+      <div style={{ ...styles.section, fontSize: 10 }}>Menu</div>
       {NAV.map(item => (
         <div key={item.id} style={{ ...styles.navItem, ...(activePage === item.id ? styles.active : {}) }}
           onClick={() => onNavigate(item.id)}>
@@ -59,19 +62,25 @@ export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
 
       <div style={styles.userRow}>
         {user && <Avatar name={user.name} userId={user.id} avatarUrl={user.avatar_url} size={30} />}
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={styles.userName}>{user?.name ?? 'Loading…'}</div>
           <div style={styles.userEmail}>{user?.email ?? ''}</div>
         </div>
+        <button className="fm-theme-btn" onClick={onToggleTheme} aria-label="Toggle theme">
+          {theme === 'dark' ? (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M13 3l-1.5 1.5M4.5 11.5L3 13"/></svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5z"/></svg>
+          )}
+        </button>
       </div>
     </aside>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  sidebar: { width: 'var(--sidebar-w)', background: 'var(--bg-primary)', borderRight: '0.5px solid var(--border-light)', display: 'flex', flexDirection: 'column', padding: '1.25rem 0', height: '100vh', position: 'sticky', top: 0, flexShrink: 0 },
   logo: { display: 'flex', alignItems: 'center', gap: 10, padding: '0 1.25rem 1.25rem', borderBottom: '0.5px solid var(--border-light)', marginBottom: '0.5rem' },
-  logoBox: { width: 32, height: 32, background: '#ccff00', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#000' },
+  logoBox: { width: 32, height: 32, background: 'var(--accent-gradient)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#0e0e0e', boxShadow: 'var(--shadow-glow)', flexShrink: 0 },
   logoName: { fontSize: 15, fontWeight: 600 },
   section: { padding: '0.85rem 1.1rem 0.35rem', fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 },
   navItem: { display: 'flex', alignItems: 'center', gap: 10, padding: '0.5rem 0.85rem', margin: '0 0.5rem 1px', borderRadius: 'var(--r-md)', fontSize: 13.5, color: 'var(--text-secondary)', cursor: 'pointer' },

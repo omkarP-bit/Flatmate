@@ -29,17 +29,21 @@ export default function Modal({ title, onClose, children, footer, width = 520 }:
 const styles: Record<string, React.CSSProperties> = {
   overlay: {
     position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.4)',
+    background: 'rgba(0,0,0,0.45)',
+    backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     zIndex: 100, padding: '1rem',
+    animation: 'fm-toast-in 0.2s ease both',
   },
   modal: {
-    background: 'var(--bg-primary)',
+    background: 'color-mix(in srgb, var(--bg-primary) 94%, transparent)',
+    backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
     border: '0.5px solid var(--border-light)',
     borderRadius: 'var(--r-xl)',
     width: '100%',
     boxShadow: 'var(--shadow-lg)',
     overflow: 'hidden',
+    animation: 'fm-toast-in 0.25s cubic-bezier(0.21, 1.02, 0.73, 1) both',
   },
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -54,6 +58,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent', cursor: 'pointer',
     fontSize: 15, color: 'var(--text-secondary)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'background 0.15s',
   },
   body: {
     padding: '1.1rem 1.25rem',

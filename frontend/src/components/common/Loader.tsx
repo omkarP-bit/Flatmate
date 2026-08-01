@@ -7,8 +7,8 @@ export default function Loader({ size = 24, fullPage = false }: LoaderProps) {
   const spinner = (
     <div style={{
       width: size, height: size,
-      border: `2px solid rgba(0,0,0,0.08)`,
-      borderTop: `2px solid #ccff00`,
+      border: `2px solid var(--border-mid)`,
+      borderTop: `2px solid var(--lime)`,
       borderRadius: '50%',
       animation: 'spin 0.7s linear infinite',
     }} />
@@ -19,7 +19,7 @@ export default function Loader({ size = 24, fullPage = false }: LoaderProps) {
       <div style={{
         position: 'fixed', inset: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(255,255,255,0.8)',
+        background: 'var(--bg-app)',
         zIndex: 999,
       }}>
         {spinner}

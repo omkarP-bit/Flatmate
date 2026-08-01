@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, model_config
+from pydantic import BaseModel, EmailStr
 
 
 class UserCreate(BaseModel):
@@ -10,8 +10,6 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    model_config = model_config = {"populate_by_name": True}
-
     name: Optional[str] = None
     upi_id: Optional[str] = None
     phone: Optional[str] = None

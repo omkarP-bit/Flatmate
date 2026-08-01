@@ -1,0 +1,61 @@
+name: flatmate
+
+# This stack runs on host networking (required in environments where Docker
+# bridge networks are unavailable). Services bind directly to the host:
+#   backend:   http://localhost:8001-8004
+#   frontend:  http://localhost:5173
+# No `ports:` mapping is needed with network_mode: host.
+
+services:
+  user-service:
+    build:
+      context: ./backend
+      dockerfile: services/user-service/Dockerfile
+      network: host
+    network_mode: host
+    env_file: ./backend/services/user-service/.env
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-}
+
+  room-service:
+    build:
+      context: ./backend
+      dockerfile: services/room-service/Dockerfile
+      network: host
+    network_mode: host
+    env_file: ./backend/services/room-service/.env
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-}
+
+  expense-service:
+    build:
+      context: ./backend
+      dockerfile: services/expense-service/Dockerfile
+      network: host
+    network_mode: host
+    env_file: ./backend/services/expense-service/.env
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-}
+
+  payment-service:
+    build:
+      context: ./backend
+      dockerfile: services/payment-service/Dockerfile
+      network: host
+    network_mode: host
+    env_file: ./backend/services/payment-service/.env
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-}
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      network: host
+    network_mode: host
+    env_file: ./frontend/.env
+    depends_on:
+      - user-service
+      - room-service
+      - expense-service
+      - payment-service

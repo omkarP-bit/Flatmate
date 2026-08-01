@@ -79,7 +79,7 @@ const s: Record<string, React.CSSProperties> = {
   pill:      { width: 18, height: 18, borderRadius: '50%', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: 'var(--text-secondary)' },
   total:     { fontSize: 13, fontWeight: 500 },
   settleBtn: { fontSize: 11, border: '0.5px solid var(--border-mid)', background: 'transparent', borderRadius: 9999, padding: '2px 10px', cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' },
-  deleteBtn: { fontSize: 11, border: '0.5px solid #fca5a5', background: 'transparent', borderRadius: 9999, padding: '2px 10px', cursor: 'pointer', color: 'var(--text-danger)', fontFamily: 'var(--font-sans)' },
+  deleteBtn: { fontSize: 11, border: '0.5px solid var(--danger-border)', background: 'transparent', borderRadius: 9999, padding: '2px 10px', cursor: 'pointer', color: 'var(--text-danger)', fontFamily: 'var(--font-sans)' },
 };
 
 import React from 'react';

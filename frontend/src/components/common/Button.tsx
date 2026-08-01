@@ -11,14 +11,14 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_STYLES: Record<ButtonVariant, React.CSSProperties> = {
-  primary: { background: '#ccff00', color: '#000', border: 'none', fontWeight: 500 },
-  ghost:   { background: 'transparent', color: '#5a5a58', border: '0.5px solid rgba(0,0,0,0.12)' },
-  danger:  { background: 'transparent', color: '#b91c1c', border: '0.5px solid #fca5a5' },
-  outline: { background: 'transparent', color: '#0e0e0e', border: '0.5px solid rgba(0,0,0,0.2)' },
+  primary: { background: 'var(--accent-gradient)', backgroundSize: '200% 100%', color: '#0e0e0e', border: 'none', fontWeight: 500, boxShadow: 'var(--shadow-glow)', animation: 'fm-shimmer 4s linear infinite' },
+  ghost:   { background: 'transparent', color: 'var(--text-secondary)', border: '0.5px solid var(--border-mid)' },
+  danger:  { background: 'var(--bg-danger)', color: 'var(--text-danger)', border: '0.5px solid var(--danger-border)' },
+  outline: { background: 'transparent', color: 'var(--text-primary)', border: '0.5px solid var(--border-heavy)' },
 };
 
 const SIZE_STYLES: Record<ButtonSize, React.CSSProperties> = {
-  sm: { height: 28, padding: '0 12px', fontSize: 12, borderRadius: 7 },
+  sm: { height: 28, padding: '0 12px', fontSize: 12, borderRadius: 8 },
   md: { height: 34, padding: '0 16px', fontSize: 13, borderRadius: 10 },
 };
 
@@ -39,12 +39,15 @@ export default function Button({
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         gap: 6, cursor: 'pointer', fontFamily: 'var(--font-sans)',
-        transition: 'opacity 0.15s',
+        transition: 'opacity 0.15s, transform 0.12s ease, box-shadow 0.2s ease',
         opacity: disabled || loading ? 0.5 : 1,
         ...VARIANT_STYLES[variant],
         ...SIZE_STYLES[size],
         ...style,
       }}
+      onMouseDown={e => { const t = e.currentTarget; t.style.transform = 'scale(0.96)'; }}
+      onMouseUp={e => { const t = e.currentTarget; t.style.transform = 'scale(1)'; }}
+      onMouseLeave={e => { const t = e.currentTarget; t.style.transform = 'scale(1)'; }}
     >
       {icon && <span style={{ display: 'flex' }}>{icon}</span>}
       {loading ? 'Loading…' : children}

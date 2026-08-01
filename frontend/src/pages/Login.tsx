@@ -1,23 +1,19 @@
 import React from 'react';
-export default function Login() {
-  const cognitoDomain  = import.meta.env.VITE_COGNITO_DOMAIN;
-  const clientId       = import.meta.env.VITE_COGNITO_CLIENT_ID;
-  const redirectUri    = import.meta.env.VITE_REDIRECT_URI ?? `${window.location.origin}/callback`;
+import { supabase } from '../lib/supabase';
 
-  const handleLogin = () => {
-    const params = new URLSearchParams({
-      response_type: 'code',
-      client_id:     clientId,
-      redirect_uri:  redirectUri,
-      scope:         'openid email profile',
-      identity_provider: 'Google',
+export default function Login() {
+  const handleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/callback`,
+      },
     });
-    window.location.href = `${cognitoDomain}/oauth2/authorize?${params}`;
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
+    <div className="fm-login-page">
+      <div className="fm-login-card">
         <div style={styles.logoRow}>
           <div style={styles.logoBox}>F</div>
           <span style={styles.logoName}>Flatmate</span>
@@ -40,14 +36,11 @@ export default function Login() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: '100vh', background: '#f4f4f2', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' },
-  card: { background: '#fff', border: '0.5px solid rgba(0,0,0,0.07)', borderRadius: 20, padding: '2.5rem 2rem', width: '100%', maxWidth: 400, boxShadow: '0 8px 32px rgba(0,0,0,0.08)' },
   logoRow: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.5rem' },
   logoBox: { width: 36, height: 36, background: '#ccff00', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, color: '#000' },
   logoName: { fontSize: 18, fontWeight: 600 },
   heading: { fontSize: 24, fontWeight: 600, marginBottom: 8, letterSpacing: '-0.02em' },
-  sub: { fontSize: 14, color: '#5a5a58', lineHeight: 1.5, marginBottom: '1.75rem' },
-  googleBtn: { width: '100%', height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#fff', border: '0.5px solid rgba(0,0,0,0.2)', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' },
-  terms: { fontSize: 11, color: '#9a9a98', marginTop: '1rem', textAlign: 'center', lineHeight: 1.5 },
+  sub: { fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.75rem' },
+  googleBtn: { width: '100%', height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: 'var(--bg-primary)', border: '0.5px solid var(--border-heavy)', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s', color: 'var(--text-primary)' },
+  terms: { fontSize: 11, color: 'var(--text-tertiary)', marginTop: '1rem', textAlign: 'center', lineHeight: 1.5 },
 };
-

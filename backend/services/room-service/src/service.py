@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from cache import cache_delete, cache_delete_pattern, cache_get, cache_set
 from models import Room, RoomMember
-from schemas import RoomCreate
+from schemas import RoomCreate, RoomUpdate
 
 
 def _generate_room_code() -> str:
@@ -31,9 +31,7 @@ def create_room(data: RoomCreate, user_id: str, db: Session) -> Room:
     db.commit()
     db.refresh(room)
 
-    asyncio.get_event_loop().run_until_complete(
-        cache_delete(f"rooms:user:{user_id}")
-    )
+    cache_delete(f"rooms:user:{user_id}")
     return room
 
 
@@ -58,16 +56,15 @@ def join_room(room_code: str, user_id: str, db: Session) -> dict:
     db.add(member)
     db.commit()
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(cache_delete(f"room:{room.id}:members"))
-    loop.run_until_complete(cache_delete(f"rooms:user:{user_id}"))
+    cache_delete(f"room:{room.id}:members")
+    cache_delete(f"rooms:user:{user_id}")
 
     return {"message": "Successfully joined room.", "room_id": room.id}
 
 
 def get_my_rooms(user_id: str, db: Session) -> list:
     cache_key = f"rooms:user:{user_id}"
-    cached = asyncio.get_event_loop().run_until_complete(cache_get(cache_key))
+    cached = cache_get(cache_key)
     if cached:
         return cached
 
@@ -88,13 +85,13 @@ def get_my_rooms(user_id: str, db: Session) -> list:
         }
         for r in rows
     ]
-    asyncio.get_event_loop().run_until_complete(cache_set(cache_key, result, ttl=300))
+    cache_set(cache_key, result, ttl=300)
     return result
 
 
 def get_room(room_id: int, db: Session) -> Room:
     cache_key = f"room:{room_id}"
-    cached = asyncio.get_event_loop().run_until_complete(cache_get(cache_key))
+    cached = cache_get(cache_key)
     if cached:
         room = db.query(Room).filter(Room.id == room_id).first()
         if room:
@@ -104,19 +101,17 @@ def get_room(room_id: int, db: Session) -> Room:
     if not room:
         raise HTTPException(status_code=404, detail="Room not found.")
 
-    asyncio.get_event_loop().run_until_complete(
-        cache_set(
-            cache_key,
-            {"id": room.id, "name": room.name},
-            ttl=300,
-        )
+    cache_set(
+        cache_key,
+        {"id": room.id, "name": room.name},
+        ttl=300,
     )
     return room
 
 
 def get_members(room_id: int, db: Session) -> list[RoomMember]:
     cache_key = f"room:{room_id}:members"
-    cached = asyncio.get_event_loop().run_until_complete(cache_get(cache_key))
+    cached = cache_get(cache_key)
     if cached:
         # Return actual ORM objects for consistent handling
         return db.query(RoomMember).filter(RoomMember.room_id == room_id).all()
@@ -130,10 +125,61 @@ def get_members(room_id: int, db: Session) -> list[RoomMember]:
         }
         for m in members
     ]
-    asyncio.get_event_loop().run_until_complete(
-        cache_set(cache_key, serialized, ttl=120)
-    )
+    cache_set(cache_key, serialized, ttl=120)
     return members
+
+
+def update_room(room_id: int, data: RoomUpdate, requester_id: str, db: Session) -> Room:
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found.")
+
+    membership = (
+        db.query(RoomMember)
+        .filter(RoomMember.room_id == room_id, RoomMember.user_id == requester_id)
+        .first()
+    )
+    if not membership:
+        raise HTTPException(status_code=403, detail="You are not a member of this room.")
+    if membership.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can update room details.")
+
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    if update_data.get("name") is not None:
+        room.name = update_data["name"]
+    if update_data.get("address") is not None:
+        room.address = update_data["address"]
+
+    db.commit()
+    db.refresh(room)
+
+    cache_delete(f"room:{room_id}")
+    cache_delete_pattern(f"rooms:user:*")
+    return room
+
+
+def regenerate_room_code(room_id: int, requester_id: str, db: Session) -> dict:
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found.")
+
+    membership = (
+        db.query(RoomMember)
+        .filter(RoomMember.room_id == room_id, RoomMember.user_id == requester_id)
+        .first()
+    )
+    if not membership:
+        raise HTTPException(status_code=403, detail="You are not a member of this room.")
+    if membership.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can regenerate the invite code.")
+
+    room.room_code = _generate_room_code()
+    db.commit()
+    db.refresh(room)
+
+    cache_delete(f"room:{room_id}")
+    cache_delete_pattern(f"rooms:user:*")
+    return {"message": "Invite code regenerated.", "room_code": room.room_code}
 
 
 def remove_member(
@@ -164,9 +210,8 @@ def remove_member(
     db.delete(target)
     db.commit()
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(cache_delete(f"room:{room_id}:members"))
-    loop.run_until_complete(cache_delete(f"rooms:user:{target_user_id}"))
-    loop.run_until_complete(cache_delete(f"rooms:user:{requester_id}"))
+    cache_delete(f"room:{room_id}:members")
+    cache_delete(f"rooms:user:{target_user_id}")
+    cache_delete(f"rooms:user:{requester_id}")
 
     return {"message": "Member removed."}

@@ -4,8 +4,10 @@ import './App.css';
 import { useAuthStore } from './store/authStore';
 import { useRoomStore } from './store/roomStore';
 import { useExpenseStore } from './store/expenseStore';
+import { useTheme } from './hooks/useTheme';
 
 import Sidebar from './components/common/Sidebar';
+import MobileNav from './components/common/MobileNav';
 import Login from './pages/Login';
 import Callback from './pages/Callback';
 import Dashboard from './pages/Dashboard';
@@ -27,6 +29,7 @@ export default function App() {
   const { isAuthenticated } = useAuthStore();
   const { fetchMyRooms, activeRoomId } = useRoomStore();
   const { fetchExpenses, fetchMyBalance, fetchSuggestions } = useExpenseStore();
+  const { theme, toggleTheme } = useTheme();
 
   const [page, setPage] = useState<string>(getInitialPage);
 
@@ -62,17 +65,13 @@ export default function App() {
   };
 
   return (
-    <div style={styles.app}>
-      <Sidebar activePage={page as Page} onNavigate={p => setPage(p)} />
-      <div style={styles.main}>
+    <div className="fm-app">
+      <Sidebar activePage={page as Page} onNavigate={p => setPage(p)} theme={theme} onToggleTheme={toggleTheme} />
+      <div className="fm-main">
         {renderPage()}
       </div>
+      <MobileNav activePage={page as Page} onNavigate={p => setPage(p)} theme={theme} onToggleTheme={toggleTheme} />
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  app:  { display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-app)' },
-  main: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-};
 

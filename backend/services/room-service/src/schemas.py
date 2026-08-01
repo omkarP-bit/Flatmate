@@ -9,6 +9,11 @@ class RoomCreate(BaseModel):
     address: Optional[str] = None
 
 
+class RoomUpdate(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+
+
 class RoomJoin(BaseModel):
     room_code: str
 

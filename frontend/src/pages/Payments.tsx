@@ -8,12 +8,14 @@ import Modal from '../components/common/Modal';
 import Button from '../components/common/Button';
 import StatCard from '../components/common/StatCard';
 import Loader from '../components/common/Loader';
+import { useToast } from '../components/common/Toast';
 import { formatAmount } from '../utils/formateCurrency';
 
 type Filter = 'all' | 'pending' | 'settled';
 
 export default function Payments() {
   const { user } = useAuthStore();
+  const toast = useToast();
   const [payments,  setPayments]  = useState<Payment[]>([]);
   const [summary,   setSummary]   = useState<PaymentSummary | null>(null);
   const [filter,    setFilter]    = useState<Filter>('all');
@@ -26,6 +28,8 @@ export default function Payments() {
       const [p, s] = await Promise.all([paymentApi.getMyPayments(), paymentApi.getMySummary()]);
       setPayments(p);
       setSummary(s);
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Failed to load payments');
     } finally {
       setLoading(false);
     }
@@ -34,8 +38,13 @@ export default function Payments() {
   useEffect(() => { load(); }, []);
 
   const handleConfirm = async (paymentId: number) => {
-    await paymentApi.settle(paymentId, {});
-    load();
+    try {
+      await paymentApi.settle(paymentId, {});
+      toast.success('Payment confirmed');
+      load();
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Failed to confirm payment');
+    }
   };
 
   const shown = payments.filter(p =>
@@ -43,8 +52,8 @@ export default function Payments() {
   );
 
   return (
-    <div style={s.page}>
-      <header style={s.topbar}>
+    <div className="fm-page">
+      <header className="fm-topbar">
         <div style={s.topLeft}>
           <span style={s.breadcrumb}>My flat</span>
           <span style={s.sep}>/</span>
@@ -56,21 +65,21 @@ export default function Payments() {
         </Button>
       </header>
 
-      <div style={s.content}>
+      <div className="fm-content">
         {loading && <Loader />}
 
         {/* Stats */}
-        <div style={s.metricsRow}>
+        <div className="fm-grid-4">
           <StatCard label="Total paid out"   value={formatAmount(summary?.total_paid      ?? 0)} sub="Settled" />
           <StatCard label="Total received"   value={formatAmount(summary?.total_received  ?? 0)} sub="Confirmed" valueColor="var(--text-success)" />
           <StatCard label="Pending out"      value={formatAmount(summary?.pending_out     ?? 0)} sub="Awaiting confirmation" valueColor="var(--text-danger)" />
           <StatCard label="Pending in"       value={formatAmount(summary?.pending_in      ?? 0)} sub="From flatmates" valueColor="var(--text-warning)" />
         </div>
 
-        <div style={s.twoCol}>
+        <div className="fm-two-col">
 
           {/* History */}
-          <div style={s.card}>
+          <div className="fm-card">
             <div style={s.cardHeader}>
               <span style={s.cardTitle}>Payment history</span>
               <div style={s.filterRow}>
@@ -91,7 +100,7 @@ export default function Payments() {
           </div>
 
           {/* Quick record form */}
-          <div style={s.card}>
+          <div className="fm-card">
             <div style={s.cardHeader}><span style={s.cardTitle}>Send a payment</span></div>
             <RecordPaymentForm onSuccess={load} />
           </div>
@@ -109,19 +118,13 @@ export default function Payments() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page:       { display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' },
-  topbar:     { height: 54, background: 'var(--bg-primary)', borderBottom: '0.5px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', flexShrink: 0 },
   topLeft:    { display: 'flex', alignItems: 'center', gap: 10 },
   breadcrumb: { fontSize: 13, color: 'var(--text-tertiary)' },
   sep:        { color: 'var(--border-mid)' },
   pageTitle:  { fontSize: 15, fontWeight: 500 },
-  content:    { padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' },
-  metricsRow: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 },
-  twoCol:     { display: 'grid', gridTemplateColumns: '1fr 280px', gap: '1.1rem', alignItems: 'start' },
-  card:       { background: 'var(--bg-primary)', border: '0.5px solid var(--border-light)', borderRadius: 'var(--r-lg)', padding: '1.1rem' },
-  cardHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' },
+  cardHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem', gap: 8, flexWrap: 'wrap' },
   cardTitle:  { fontSize: 13.5, fontWeight: 600 },
-  filterRow:  { display: 'flex', gap: 5 },
+  filterRow:  { display: 'flex', gap: 5, flexWrap: 'wrap' },
   chip:       { padding: '3px 12px', borderRadius: 9999, border: '0.5px solid var(--border-light)', background: 'transparent', fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' },
   chipActive: { background: '#ccff00', color: '#000', borderColor: '#ccff00', fontWeight: 500 },
   empty:      { fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '2rem 0' },

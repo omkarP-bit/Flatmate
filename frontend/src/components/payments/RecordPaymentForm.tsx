@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRoomStore } from '../../store/roomStore';
 import { useAuthStore } from '../../store/authStore';
 import { paymentApi } from '../../api/paymentApi';
+import { useToast } from '../common/Toast';
 import { formatAmount } from '../../utils/formateCurrency';
 import Button from '../common/Button';
 
@@ -15,6 +16,7 @@ interface Props {
 export default function RecordPaymentForm({ onSuccess, onClose, prefillToUser, prefillAmount }: Props) {
   const { members, activeRoomId } = useRoomStore();
   const { user } = useAuthStore();
+  const toast = useToast();
 
   const others = members.filter(m => m.user_id !== user?.id);
 
@@ -42,10 +44,13 @@ export default function RecordPaymentForm({ onSuccess, onClose, prefillToUser, p
         upi_ref: upiRef.trim() || undefined,
         note:    note.trim()   || undefined,
       });
+      toast.success('Payment recorded');
       onSuccess?.();
       onClose?.();
     } catch (e: any) {
-      setError(e.response?.data?.detail ?? e.message ?? 'Failed to record payment');
+      const msg = e.response?.data?.detail ?? e.message ?? 'Failed to record payment';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

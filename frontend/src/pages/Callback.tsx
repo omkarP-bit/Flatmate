@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
 import { userApi } from '../api/userApi';
 import Loader from '../components/common/Loader';
 
@@ -15,45 +16,45 @@ export default function Callback({ onSuccess }: CallbackProps) {
     if (called.current) return;
     called.current = true;
 
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (!code) { window.location.href = '/login'; return; }
-
-    exchangeCode(code);
+    handleCallback();
   }, []);
 
-  const exchangeCode = async (code: string) => {
+  const handleCallback = async () => {
     try {
-      const cognitoDomain = import.meta.env.VITE_COGNITO_DOMAIN;
-      const clientId      = import.meta.env.VITE_COGNITO_CLIENT_ID;
-      const redirectUri   = import.meta.env.VITE_REDIRECT_URI ?? `${window.location.origin}/callback`;
+      const code = new URLSearchParams(window.location.search).get('code');
 
-      const body = new URLSearchParams({
-        grant_type:   'authorization_code',
-        client_id:    clientId,
-        redirect_uri: redirectUri,
-        code,
+      let session;
+      if (code) {
+        console.log('[auth] PKCE code detected, exchanging…');
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) throw error;
+        session = data.session;
+      } else {
+        console.log('[auth] checking session from URL fragment…', window.location.href);
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        session = data.session;
+      }
+
+      if (!session) {
+        console.error('[auth] no session found on callback URL', window.location.href);
+        window.location.href = '/login';
+        return;
+      }
+
+      const accessToken = session.access_token;
+      setToken(accessToken);
+
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      const user = await userApi.createOrGet({
+        name: payload.user_metadata?.full_name ?? payload.email,
+        email: payload.email,
       });
-
-      const res = await fetch(`${cognitoDomain}/oauth2/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString(),
-      });
-
-      const tokens = await res.json();
-      if (!tokens.id_token) throw new Error('No id_token returned');
-
-      setToken(tokens.id_token);
-
-      // Decode JWT payload to get name + email
-      const payload = JSON.parse(atob(tokens.id_token.split('.')[1]));
-      const user = await userApi.createOrGet({ name: payload.name ?? payload.email, email: payload.email });
       setUser(user);
 
       onSuccess();
     } catch (err) {
-      console.error('Auth callback failed:', err);
+      console.error('[auth] callback failed:', err);
       window.location.href = '/login';
     }
   };
@@ -62,7 +63,7 @@ export default function Callback({ onSuccess }: CallbackProps) {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
         <Loader size={32} />
-        <p style={{ color: '#5a5a58', fontSize: 14 }}>Signing you in…</p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Signing you in…</p>
       </div>
     </div>
   );

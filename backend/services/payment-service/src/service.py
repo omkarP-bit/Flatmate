@@ -29,12 +29,9 @@ def create_payment(data: PaymentCreate, from_user: str, db: Session) -> Payment:
     db.commit()
     db.refresh(payment)
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(cache_delete(f"payments:user:{from_user}"))
-    loop.run_until_complete(cache_delete(f"payments:user:{data.to_user}"))
-    loop.run_until_complete(
-        cache_delete_pattern(f"payments:room:{data.room_id}:*")
-    )
+    cache_delete(f"payments:user:{from_user}")
+    cache_delete(f"payments:user:{data.to_user}")
+    cache_delete_pattern(f"payments:room:{data.room_id}:*")
 
     return payment
 
@@ -61,12 +58,9 @@ def settle_payment(
     db.commit()
     db.refresh(payment)
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(cache_delete(f"payments:user:{str(payment.from_user)}"))
-    loop.run_until_complete(cache_delete(f"payments:user:{confirmer_id}"))
-    loop.run_until_complete(
-        cache_delete_pattern(f"payments:room:{payment.room_id}:*")
-    )
+    cache_delete(f"payments:user:{str(payment.from_user)}")
+    cache_delete(f"payments:user:{confirmer_id}")
+    cache_delete_pattern(f"payments:room:{payment.room_id}:*")
 
     return payment
 
@@ -80,7 +74,7 @@ def get_payment_by_id(payment_id: int, db: Session) -> Payment:
 
 def get_my_payments(user_id: str, db: Session) -> list[Payment]:
     cache_key = f"payments:user:{user_id}"
-    cached = asyncio.get_event_loop().run_until_complete(cache_get(cache_key))
+    cached = cache_get(cache_key)
     if cached:
         return (
             db.query(Payment)
@@ -99,9 +93,7 @@ def get_my_payments(user_id: str, db: Session) -> list[Payment]:
         .order_by(Payment.created_at.desc())
         .all()
     )
-    asyncio.get_event_loop().run_until_complete(
-        cache_set(cache_key, [{"id": p.id} for p in payments], ttl=120)
-    )
+    cache_set(cache_key, [{"id": p.id} for p in payments], ttl=120)
     return payments
 
 
@@ -110,7 +102,7 @@ def get_room_payments(
 ) -> list[Payment]:
     status_key = status or "all"
     cache_key = f"payments:room:{room_id}:{status_key}"
-    cached = asyncio.get_event_loop().run_until_complete(cache_get(cache_key))
+    cached = cache_get(cache_key)
     if cached:
         query = db.query(Payment).filter(Payment.room_id == room_id)
         if status:
@@ -122,9 +114,7 @@ def get_room_payments(
         query = query.filter(Payment.status == status)
     payments = query.order_by(Payment.created_at.desc()).all()
 
-    asyncio.get_event_loop().run_until_complete(
-        cache_set(cache_key, [{"id": p.id} for p in payments], ttl=60)
-    )
+    cache_set(cache_key, [{"id": p.id} for p in payments], ttl=60)
     return payments
 
 

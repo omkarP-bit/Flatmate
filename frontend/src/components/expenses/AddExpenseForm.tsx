@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRoomStore } from '../../store/roomStore';
 import { useExpenseStore } from '../../store/expenseStore';
 import { useAuthStore } from '../../store/authStore';
+import { useToast } from '../common/Toast';
 import { ExpenseCategory, SplitType, ExpenseCreate } from '../../types/expense.types';
 import { getCategoryMeta, CATEGORY_META } from '../../utils/categoryMeta';
 import { calculateSplits } from '../../utils/splitCalculator';
@@ -29,6 +30,7 @@ export default function AddExpenseForm({ onClose, onSuccess }: Props) {
   const { activeRoomId, members } = useRoomStore();
   const { createExpense } = useExpenseStore();
   const { user } = useAuthStore();
+  const toast = useToast();
 
   const [title,     setTitle]     = useState('');
   const [amount,    setAmount]    = useState('');
@@ -82,10 +84,13 @@ export default function AddExpenseForm({ onClose, onSuccess }: Props) {
         notes: notes.trim() || undefined,
       };
       await createExpense(data);
+      toast.success('Expense added');
       onSuccess?.();
       onClose();
     } catch (e: any) {
-      setError(e.message ?? 'Failed to add expense');
+      const msg = e.response?.data?.detail ?? e.message ?? 'Failed to add expense';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -112,7 +117,7 @@ export default function AddExpenseForm({ onClose, onSuccess }: Props) {
       </div>
 
       {/* Amount + Paid by */}
-      <div style={s.twoCol}>
+      <div className="fm-grid-2">
         <div style={s.field}>
           <label style={s.label}>Amount (₹)</label>
           <input
@@ -136,7 +141,7 @@ export default function AddExpenseForm({ onClose, onSuccess }: Props) {
       {/* Category */}
       <div style={s.field}>
         <label style={s.label}>Category</label>
-        <div style={s.catGrid}>
+        <div className="fm-cat-grid">
           {CATEGORIES.map(c => {
             const meta = getCategoryMeta(c);
             return (
@@ -166,7 +171,7 @@ export default function AddExpenseForm({ onClose, onSuccess }: Props) {
       {/* Members */}
       <div style={s.field}>
         <label style={s.label}>Split among</label>
-        <div style={s.membersGrid}>
+        <div className="fm-grid-2">
           {members.map(m => {
             const on = selected.includes(m.user_id);
             const share = on && amount
@@ -228,23 +233,20 @@ const s: Record<string, React.CSSProperties> = {
   input:        { height: 34, padding: '0 10px', borderRadius: 'var(--r-md)', border: '0.5px solid var(--border-mid)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'var(--font-sans)', outline: 'none', width: '100%' },
   select:       { height: 34, padding: '0 10px', borderRadius: 'var(--r-md)', border: '0.5px solid var(--border-mid)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'var(--font-sans)', outline: 'none', width: '100%' },
   textarea:     { padding: '8px 10px', borderRadius: 'var(--r-md)', border: '0.5px solid var(--border-mid)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'var(--font-sans)', outline: 'none', width: '100%', resize: 'none' },
-  twoCol:       { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 },
-  aiTag:        { display: 'inline-flex', alignItems: 'center', background: 'rgba(204,255,0,0.12)', border: '0.5px solid rgba(204,255,0,0.3)', borderRadius: 9999, padding: '3px 10px', fontSize: 11, color: '#4d6000', marginTop: 2 },
-  catGrid:      { display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6 },
+  aiTag:        { display: 'inline-flex', alignItems: 'center', background: 'var(--lime-dim)', border: '0.5px solid var(--lime-border)', borderRadius: 9999, padding: '3px 10px', fontSize: 11, color: 'var(--lime-text)', marginTop: 2 },
   catChip:      { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 4px', border: '0.5px solid var(--border-light)', borderRadius: 'var(--r-md)', cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.15s' },
-  catChipActive:{ border: '0.5px solid #ccff00', background: 'rgba(204,255,0,0.1)', color: 'var(--text-primary)', fontWeight: 500 },
+  catChipActive:{ border: '0.5px solid #ccff00', background: 'var(--lime-dim)', color: 'var(--text-primary)', fontWeight: 500 },
   splitTabs:    { display: 'flex', border: '0.5px solid var(--border-mid)', borderRadius: 'var(--r-md)', overflow: 'hidden' },
   splitTab:     { flex: 1, padding: '6px', fontSize: 12.5, textAlign: 'center', cursor: 'pointer', background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' },
   splitTabActive:{ background: '#ccff00', color: '#000', fontWeight: 500 },
-  membersGrid:  { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 },
   chip:         { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: '0.5px solid var(--border-light)', borderRadius: 'var(--r-md)', cursor: 'pointer', transition: 'all 0.15s' },
-  chipOn:       { border: '0.5px solid #ccff00', background: 'rgba(204,255,0,0.08)' },
+  chipOn:       { border: '0.5px solid #ccff00', background: 'var(--lime-dim)' },
   chipAv:       { width: 26, height: 26, borderRadius: '50%', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, flexShrink: 0 },
   check:        { width: 16, height: 16, borderRadius: '50%', border: '1.5px solid var(--border-mid)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   checkOn:      { background: '#ccff00', borderColor: '#ccff00' },
   summary:      { background: 'var(--bg-secondary)', borderRadius: 'var(--r-md)', padding: '0.7rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   error:        { fontSize: 12, color: 'var(--text-danger)', background: 'var(--bg-danger)', padding: '8px 12px', borderRadius: 'var(--r-md)' },
-  footer:       { display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 },
+  footer:       { display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4, flexWrap: 'wrap' },
 };
 
 import React from 'react';

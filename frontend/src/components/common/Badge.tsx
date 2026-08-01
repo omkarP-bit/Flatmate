@@ -1,12 +1,12 @@
 type BadgeVariant = 'neutral' | 'success' | 'danger' | 'warning' | 'info' | 'lime';
 
 const VARIANTS: Record<BadgeVariant, { bg: string; color: string }> = {
-  neutral: { bg: '#f0f0ee', color: '#5a5a58' },
-  success: { bg: '#dcfce7', color: '#1a6b3a' },
-  danger:  { bg: '#fee2e2', color: '#b91c1c' },
-  warning: { bg: '#fef3c7', color: '#92400e' },
-  info:    { bg: '#dbeafe', color: '#1e40af' },
-  lime:    { bg: 'rgba(204,255,0,0.15)', color: '#4d6000' },
+  neutral: { bg: 'var(--bg-secondary)', color: 'var(--text-secondary)' },
+  success: { bg: 'var(--bg-success)', color: 'var(--text-success)' },
+  danger:  { bg: 'var(--bg-danger)', color: 'var(--text-danger)' },
+  warning: { bg: 'var(--bg-warning)', color: 'var(--text-warning)' },
+  info:    { bg: 'var(--bg-info)', color: 'var(--text-info)' },
+  lime:    { bg: 'var(--lime-dim)', color: 'var(--lime-text)' },
 };
 
 interface BadgeProps {

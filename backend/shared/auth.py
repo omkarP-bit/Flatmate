@@ -1,7 +1,7 @@
-from functools import lru_cache
-from typing import Any
+import json
+import time
+import urllib.request
 
-import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwk, jwt
@@ -10,69 +10,51 @@ from config import settings
 
 security = HTTPBearer()
 
-# Module-level JWKS key cache: kid → key dict
-_jwks_cache: dict[str, Any] = {}
+_jwks_cache = {"data": None, "fetched_at": 0.0}
+_JWKS_TTL_SECONDS = 3600
 
 
-@lru_cache(maxsize=1)
-def _fetch_jwks() -> dict[str, Any]:
-    """Fetch JWKS from Cognito and return a kid → key mapping.
-    lru_cache ensures this survives across warm Lambda invocations."""
-    response = httpx.get(settings.cognito_jwks_url, timeout=10)
-    response.raise_for_status()
-    keys = response.json().get("keys", [])
-    return {k["kid"]: k for k in keys}
+def _get_jwks() -> dict:
+    now = time.time()
+    if _jwks_cache["data"] is None or now - _jwks_cache["fetched_at"] > _JWKS_TTL_SECONDS:
+        url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            _jwks_cache["data"] = json.loads(resp.read())
+        _jwks_cache["fetched_at"] = now
+    return _jwks_cache["data"]
 
 
-def _get_jwks() -> dict[str, Any]:
-    global _jwks_cache
-    if not _jwks_cache:
-        _jwks_cache = _fetch_jwks()
-    return _jwks_cache
+def _get_public_key(kid: str):
+    for candidate in _get_jwks().get("keys", []):
+        if candidate.get("kid") == kid:
+            return jwk.construct(candidate)
+    raise JWTError(f"No JWK found for kid {kid}")
 
 
-def _clear_and_reload_jwks() -> dict[str, Any]:
-    global _jwks_cache
-    _fetch_jwks.cache_clear()
-    _jwks_cache = _fetch_jwks()
-    return _jwks_cache
-
-
-def verify_cognito_token(token: str) -> dict:
-    try:
-        # Step 1: decode header to get kid (unverified)
-        headers = jwt.get_unverified_headers(token)
-        kid = headers.get("kid")
-        if not kid:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token missing kid header.",
-            )
-
-        # Step 2: look up kid in cached JWKS
-        jwks = _get_jwks()
-        if kid not in jwks:
-            # Retry once with fresh JWKS
-            jwks = _clear_and_reload_jwks()
-            if kid not in jwks:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Unknown token signing key.",
-                )
-
-        # Step 3: construct public key
-        key_data = jwks[kid]
-        public_key = jwk.construct(key_data)
-
-        # Step 4: decode and verify token
-        claims = jwt.decode(
+def _verify_token(token: str, alg: str) -> dict:
+    if alg == "ES256":
+        return jwt.decode(
             token,
-            public_key,
-            algorithms=["RS256"],
+            _get_public_key(jwt.get_unverified_header(token).get("kid")),
+            algorithms=["ES256"],
             options={"verify_aud": False},
         )
-        return claims
+    return jwt.decode(
+        token,
+        settings.supabase_jwt_secret,
+        algorithms=["HS256"],
+        options={"verify_aud": False},
+    )
 
+
+def verify_supabase_token(token: str) -> dict:
+    """Verify a Supabase JWT.
+
+    Newer projects sign access tokens with ES256 (verified against the
+    project JWKS); older ones use HS256 with the shared JWT secret.
+    """
+    try:
+        return _verify_token(token, jwt.get_unverified_header(token).get("alg"))
     except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -83,13 +65,13 @@ def verify_cognito_token(token: str) -> dict:
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict:
-    return verify_cognito_token(credentials.credentials)
+    return verify_supabase_token(credentials.credentials)
 
 
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> str:
-    claims = verify_cognito_token(credentials.credentials)
+    claims = verify_supabase_token(credentials.credentials)
     sub = claims.get("sub")
     if not sub:
         raise HTTPException(

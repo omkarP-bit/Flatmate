@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRoom } from '../hooks/useRoom';
 import MemberCard from '../components/room/MemberCard';
 import Button from '../components/common/Button';
 import Loader from '../components/common/Loader';
+import { useToast } from '../components/common/Toast';
+import { useConfirm } from '../components/common/Confirm';
 
 type Tab = 'settings' | 'join' | 'create';
 
 export default function Room() {
-  const { activeRoom, members, isAdmin, loading, handleCreate, handleJoin, handleRemoveMember } = useRoom();
+  const { activeRoom, members, isAdmin, loading, handleCreate, handleJoin, handleRemoveMember, handleUpdateRoom, handleRegenerateCode, handleLeave: handleLeaveRoom } = useRoom();
+  const toast = useToast();
+  const { confirm } = useConfirm();
   const [tab,       setTab]       = useState<Tab>('settings');
   const [roomName,  setRoomName]  = useState(activeRoom?.name ?? '');
   const [address,   setAddress]   = useState(activeRoom?.address ?? '');
@@ -18,19 +22,24 @@ export default function Room() {
   const [error,     setError]     = useState('');
   const [copied,    setCopied]    = useState(false);
 
+  useEffect(() => {
+    setRoomName(activeRoom?.name ?? '');
+    setAddress(activeRoom?.address ?? '');
+  }, [activeRoom?.id]);
+
   const handleJoinSubmit = async () => {
     if (!joinCode.trim()) return setError('Enter a room code');
     setSaving(true); setError('');
-    try { await handleJoin(joinCode.trim()); setJoinCode(''); }
-    catch (e: any) { setError(e.response?.data?.detail ?? 'Room not found'); }
+    try { await handleJoin(joinCode.trim()); setJoinCode(''); toast.success('Joined room!'); }
+    catch (e: any) { const msg = e.response?.data?.detail ?? 'Room not found'; setError(msg); toast.error(msg); }
     finally { setSaving(false); }
   };
 
   const handleCreateSubmit = async () => {
     if (!newName.trim()) return setError('Enter a room name');
     setSaving(true); setError('');
-    try { await handleCreate(newName.trim(), newAddr.trim() || undefined); setNewName(''); setNewAddr(''); }
-    catch (e: any) { setError(e.response?.data?.detail ?? 'Failed to create room'); }
+    try { await handleCreate(newName.trim(), newAddr.trim() || undefined); setNewName(''); setNewAddr(''); toast.success('Room created!'); }
+    catch (e: any) { const msg = e.response?.data?.detail ?? 'Failed to create room'; setError(msg); toast.error(msg); }
     finally { setSaving(false); }
   };
 
@@ -39,12 +48,67 @@ export default function Room() {
       navigator.clipboard.writeText(activeRoom.room_code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      toast.success('Invite code copied');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!roomName.trim()) return toast.error('Room name is required');
+    setSaving(true);
+    try {
+      await handleUpdateRoom({ name: roomName.trim(), address: address.trim() || undefined });
+      toast.success('Room details saved');
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Failed to save room');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    try {
+      await handleRegenerateCode();
+      toast.success('Invite code regenerated');
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Failed to regenerate code');
+    }
+  };
+
+  const handleRemove = async (uid: string) => {
+    const ok = await confirm({
+      title: 'Remove member?',
+      message: 'This removes them from the room and their shares.',
+      confirmLabel: 'Remove',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await handleRemoveMember(uid);
+      toast.success('Member removed');
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Failed to remove member');
+    }
+  };
+
+  const handleLeave = async () => {
+    const ok = await confirm({
+      title: 'Leave this room?',
+      message: 'Leaving removes you from all expense splits. Settled amounts are unaffected.',
+      confirmLabel: 'Leave',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await handleLeaveRoom();
+      toast.success('You left the room');
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Failed to leave room');
     }
   };
 
   return (
-    <div style={s.page}>
-      <header style={s.topbar}>
+    <div className="fm-page">
+      <header className="fm-topbar">
         <div style={s.topLeft}>
           <span style={s.breadcrumb}>{activeRoom?.name ?? 'Room'}</span>
           <span style={s.sep}>/</span>
@@ -62,16 +126,16 @@ export default function Room() {
         ))}
       </div>
 
-      <div style={s.content}>
+      <div className="fm-content">
         {loading && <Loader />}
 
         {/* Settings tab */}
         {tab === 'settings' && activeRoom && (
-          <div style={s.twoCol}>
+          <div className="fm-two-col">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
 
               {/* Room details */}
-              <div style={s.card}>
+              <div className="fm-card">
                 <div style={s.cardTitle}>Room details</div>
                 <div style={s.field}>
                   <label style={s.label}>Room name</label>
@@ -82,21 +146,21 @@ export default function Room() {
                   <textarea rows={2} style={s.textarea} value={address} onChange={e => setAddress(e.target.value)} />
                 </div>
                 <div style={s.btnRow}>
-                  <Button variant="primary" size="sm" loading={saving}>Save</Button>
-                  <Button variant="ghost" size="sm">Cancel</Button>
+                  <Button variant="primary" size="sm" loading={saving} onClick={handleSave}>Save</Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setRoomName(activeRoom?.name ?? ''); setAddress(activeRoom?.address ?? ''); }}>Cancel</Button>
                 </div>
               </div>
 
               {/* Members */}
-              <div style={s.card}>
+              <div className="fm-card">
                 <div style={s.cardHeader}>
                   <span style={s.cardTitle}>Members ({members.length})</span>
-                  <Button variant="ghost" size="sm">+ Invite</Button>
+                  <Button variant="ghost" size="sm" onClick={() => { if (activeRoom?.room_code) copyCode(); }}>+ Invite</Button>
                 </div>
                 {members.map(m => (
                   <MemberCard key={m.user_id} member={m}
                     isRequesterAdmin={isAdmin}
-                    onRemove={isAdmin ? handleRemoveMember : undefined} />
+                    onRemove={isAdmin ? handleRemove : undefined} />
                 ))}
               </div>
 
@@ -105,7 +169,7 @@ export default function Room() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
 
               {/* Stats */}
-              <div style={s.card}>
+              <div className="fm-card">
                 <div style={s.cardTitle}>Room stats</div>
                 <div style={s.statsGrid}>
                   {[
@@ -121,7 +185,7 @@ export default function Room() {
               </div>
 
               {/* Invite code */}
-              <div style={s.card}>
+              <div className="fm-card">
                 <div style={s.cardTitle}>Invite code</div>
                 <div style={s.inviteCard}>
                   <div style={s.inviteHint}>Share this code to invite flatmates</div>
@@ -132,7 +196,7 @@ export default function Room() {
                   <Button variant="primary" style={{ flex: 1 }} onClick={copyCode}>
                     {copied ? 'Copied!' : 'Copy code'}
                   </Button>
-                  <Button variant="ghost">Regenerate</Button>
+                  <Button variant="ghost" onClick={handleRegenerate}>Regenerate</Button>
                 </div>
               </div>
 
@@ -140,7 +204,7 @@ export default function Room() {
               <div style={s.dangerZone}>
                 <div style={s.dzTitle}>Danger zone</div>
                 <div style={s.dzDesc}>Leaving removes you from all expense splits. Settled amounts are unaffected.</div>
-                <Button variant="danger" size="sm">Leave this room</Button>
+                <Button variant="danger" size="sm" onClick={handleLeave}>Leave this room</Button>
               </div>
 
             </div>
@@ -149,8 +213,8 @@ export default function Room() {
 
         {/* Join tab */}
         {tab === 'join' && (
-          <div style={{ maxWidth: 400 }}>
-            <div style={s.card}>
+          <div style={{ maxWidth: 400, width: '100%' }}>
+            <div className="fm-card">
               <div style={s.cardTitle}>Join a room</div>
               <p style={s.cardDesc}>Enter the invite code shared by your flatmate. Codes are 8 characters, uppercase.</p>
               <div style={s.field}>
@@ -171,8 +235,8 @@ export default function Room() {
 
         {/* Create tab */}
         {tab === 'create' && (
-          <div style={{ maxWidth: 400 }}>
-            <div style={s.card}>
+          <div style={{ maxWidth: 400, width: '100%' }}>
+            <div className="fm-card">
               <div style={s.cardTitle}>Create a new room</div>
               <p style={s.cardDesc}>You'll be the admin. Share the invite code with flatmates after creating.</p>
               <div style={s.field}>
@@ -196,19 +260,14 @@ export default function Room() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page:       { display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' },
-  topbar:     { height: 54, background: 'var(--bg-primary)', borderBottom: '0.5px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', flexShrink: 0 },
   topLeft:    { display: 'flex', alignItems: 'center', gap: 10 },
   breadcrumb: { fontSize: 13, color: 'var(--text-tertiary)' },
   sep:        { color: 'var(--border-mid)' },
   pageTitle:  { fontSize: 15, fontWeight: 500 },
-  tabNav:     { display: 'flex', padding: '0 1.5rem', gap: 0, borderBottom: '0.5px solid var(--border-light)', background: 'var(--bg-primary)' },
-  tab:        { padding: '0.65rem 1rem', fontSize: 13, cursor: 'pointer', color: 'var(--text-secondary)', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', marginBottom: -1, fontFamily: 'var(--font-sans)' },
+  tabNav:     { display: 'flex', padding: '0 1.5rem', gap: 0, borderBottom: '0.5px solid var(--border-light)', background: 'var(--bg-primary)', overflowX: 'auto', flexShrink: 0 },
+  tab:        { padding: '0.65rem 1rem', fontSize: 13, cursor: 'pointer', color: 'var(--text-secondary)', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', marginBottom: -1, fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap' },
   tabActive:  { color: 'var(--text-primary)', borderBottomColor: '#ccff00', fontWeight: 500 },
-  content:    { padding: '1.25rem 1.5rem', flex: 1 },
-  twoCol:     { display: 'grid', gridTemplateColumns: '1fr 300px', gap: '1.1rem', alignItems: 'start' },
-  card:       { background: 'var(--bg-primary)', border: '0.5px solid var(--border-light)', borderRadius: 'var(--r-lg)', padding: '1.25rem' },
-  cardHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' },
+  cardHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem', gap: 8 },
   cardTitle:  { fontSize: 13.5, fontWeight: 600, marginBottom: '0.85rem' },
   cardDesc:   { fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5, marginBottom: '0.85rem' },
   field:      { display: 'flex', flexDirection: 'column', gap: 5, marginBottom: '0.75rem' },
@@ -224,7 +283,7 @@ const s: Record<string, React.CSSProperties> = {
   inviteHint: { fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 },
   inviteCode: { fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 500, letterSpacing: '0.15em', color: 'var(--text-primary)' },
   inviteMeta: { fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 },
-  dangerZone: { border: '0.5px solid #fca5a5', borderRadius: 'var(--r-lg)', padding: '1.25rem', background: '#FCEBEB' },
+  dangerZone: { border: '0.5px solid var(--danger-border)', borderRadius: 'var(--r-lg)', padding: '1.25rem', background: 'var(--bg-danger)' },
   dzTitle:    { fontSize: 14, fontWeight: 500, color: 'var(--text-danger)', marginBottom: 5 },
   dzDesc:     { fontSize: 12, color: 'var(--text-danger)', opacity: 0.75, lineHeight: 1.5, marginBottom: '0.85rem' },
   errorMsg:   { fontSize: 12, color: 'var(--text-danger)', background: 'var(--bg-danger)', padding: '8px 12px', borderRadius: 'var(--r-md)', marginTop: 4 },

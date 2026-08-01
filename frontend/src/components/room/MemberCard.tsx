@@ -70,7 +70,7 @@ const s: Record<string, React.CSSProperties> = {
   right:         { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 },
   actions:       { display: 'flex', gap: 5 },
   iconBtn:       { width: 28, height: 28, borderRadius: 'var(--r-md)', border: '0.5px solid var(--border-light)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)' },
-  iconBtnDanger: { borderColor: '#fca5a5', color: 'var(--text-danger)' },
+  iconBtnDanger: { borderColor: 'var(--danger-border)', color: 'var(--text-danger)' },
 };
 
 import React from 'react';

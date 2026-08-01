@@ -3,8 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='70' font-size='80' font-weight='bold' text-anchor='middle' fill='%23ccff00'>F</text></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f4f4f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0e11" media="(prefers-color-scheme: dark)" />
     <title>Flatmate - Expense Splitting Made Simple</title>
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('flatmate-theme');
+          var theme = saved === 'dark' || saved === 'light'
+            ? saved
+            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {}
+      })();
+    </script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
@@ -59,6 +72,30 @@
         --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
         --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
         --shadow-lg: 0 8px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+      }
+
+      [data-theme="dark"] {
+        --bg-app:     #0e0e11;
+        --bg-primary: #161619;
+        --bg-secondary:#1c1c20;
+        --bg-tertiary: #26262b;
+        --border-light: rgba(255,255,255,0.08);
+        --border-mid:   rgba(255,255,255,0.14);
+        --border-heavy: rgba(255,255,255,0.26);
+        --text-primary:   #f2f2f0;
+        --text-secondary: #a8a8a3;
+        --text-tertiary:  #6e6e6a;
+        --text-success:   #4ade80;
+        --text-danger:    #f87171;
+        --text-warning:   #fbbf24;
+        --text-info:      #60a5fa;
+        --bg-success: rgba(34,197,94,0.15);
+        --bg-danger:  rgba(239,68,68,0.15);
+        --bg-warning: rgba(245,158,11,0.15);
+        --bg-info:    rgba(59,130,246,0.15);
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4);
+        --shadow-lg: 0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.5);
       }
 
       html, body, #root {

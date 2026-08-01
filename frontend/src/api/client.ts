@@ -11,7 +11,7 @@ const BASE_URLS: Record<string, string> = {
 function createClient(service: keyof typeof BASE_URLS) {
   const client = axios.create({ baseURL: BASE_URLS[service] });
 
-  // Attach Cognito JWT on every request
+  // Attach Supabase JWT on every request
   client.interceptors.request.use((config) => {
     const token = useAuthStore.getState().token;
     if (token) config.headers.Authorization = `Bearer ${token}`;
