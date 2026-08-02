@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { userApi } from '../api/userApi';
+import { finalizeSession } from '../lib/authFlow';
 import Loader from '../components/common/Loader';
 
 interface CallbackProps {
@@ -42,16 +42,9 @@ export default function Callback({ onSuccess }: CallbackProps) {
         return;
       }
 
-      const accessToken = session.access_token;
-      setToken(accessToken);
-
-      const payload = JSON.parse(atob(accessToken.split('.')[1]));
-      const user = await userApi.createOrGet({
-        name: payload.user_metadata?.full_name ?? payload.email,
-        email: payload.email,
-      });
-      setUser(user);
-
+      await finalizeSession(session.access_token, setToken, setUser);
+      // Clean the URL so a later cold start doesn't re-enter the callback route.
+      window.history.replaceState({}, document.title, window.location.pathname);
       onSuccess();
     } catch (err) {
       console.error('[auth] callback failed:', err);

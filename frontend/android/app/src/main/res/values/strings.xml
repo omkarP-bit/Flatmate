@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Flatmate</string>
+    <string name="title_activity_main">Flatmate</string>
+    <string name="package_name">com.flatmate.app</string>
+    <string name="custom_url_scheme">com.flatmate.app</string>
+</resources>

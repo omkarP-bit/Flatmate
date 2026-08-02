@@ -5,6 +5,8 @@ import { useAuthStore } from './store/authStore';
 import { useRoomStore } from './store/roomStore';
 import { useExpenseStore } from './store/expenseStore';
 import { useTheme } from './hooks/useTheme';
+import { supabase } from './lib/supabase';
+import { finalizeSession } from './lib/authFlow';
 
 import Sidebar from './components/common/Sidebar';
 import MobileNav from './components/common/MobileNav';
@@ -26,12 +28,31 @@ function getInitialPage(): string {
 }
 
 export default function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, setToken, setUser, setAuthError, setAuthStatus } = useAuthStore();
   const { fetchMyRooms, activeRoomId } = useRoomStore();
   const { fetchExpenses, fetchMyBalance, fetchSuggestions } = useExpenseStore();
   const { theme, toggleTheme } = useTheme();
 
   const [page, setPage] = useState<string>(getInitialPage);
+
+  // If the session exists but the store isn't hydrated yet (e.g. cold start),
+  // recover it from Supabase's persisted storage.
+  useEffect(() => {
+    if (isAuthenticated) return;
+    supabase.auth.getSession().then(async ({ data, error }) => {
+      if (error) {
+        console.error('[auth] getSession failed:', error);
+        setAuthError(error.message);
+        return;
+      }
+      if (data.session) {
+        console.log('[auth] restored persisted session');
+        setAuthStatus('Restoring session…');
+        await finalizeSession(data.session.access_token, setToken, setUser);
+        setAuthStatus(null);
+      }
+    });
+  }, []);
 
   // On auth → load rooms
   useEffect(() => {

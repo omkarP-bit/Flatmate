@@ -14,6 +14,8 @@ app.add_middleware(
         "https://dcv6944l3p636.cloudfront.net",
         "http://localhost:5173",
         "http://localhost:3000",
+        "https://localhost",
+        "capacitor://localhost",
     ],
     allow_credentials=False,
     allow_methods=["*"],
